@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { formatDuration } from "../utils/formatDate";
 import Modal from "./Modal";
 
-const API_URL = "http://localhost:8000/api/trips/";
+const API_URL = "https://tracking-user-backend.vercel.app/api/trips/";
 export interface Trip {
   id: string;
   total_miles: number;

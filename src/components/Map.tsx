@@ -13,7 +13,7 @@ import L from "leaflet";
 import { toast } from "sonner";
 const { BaseLayer } = LayersControl;
 
-const API_URL = "http://localhost:8000/api/trips/new/";
+const API_URL = "https://tracking-user-backend.vercel.app/api/trips/new/";
 
 const redMarker = new L.Icon({
   iconUrl:
