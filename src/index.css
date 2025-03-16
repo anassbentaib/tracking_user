@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body {
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+}
+
+.user-menu {
+  z-index: 10000 !important;
+}
