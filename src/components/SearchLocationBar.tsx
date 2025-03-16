@@ -5,17 +5,54 @@ import { formatDuration } from "../utils/formatDate";
 import Modal from "./Modal";
 
 const API_URL = "http://localhost:8000/api/trips/";
+export interface Trip {
+  id: string;
+  total_miles: number;
+  current_address: string;
+  pickup_address: string;
+  dropoff_address: string;
+  cycle_hours: number;
+  available_routes?: Route[];
+  trip: {
+    id: string;
+    total_miles: number;
+    current_address: string;
+    pickup_address: string;
+    dropoff_address: string;
+    cycle_hours: number;
+    available_routes?: Route[];
+  };
+  fuel_stops?: FuelStop[];
+  water_alerts?: WaterAlert[];
+}
 
-const SearchLocationBar = ({
+interface Route {
+  duration: number;
+  distance: number;
+}
+
+interface FuelStop {
+  location: string;
+  distance_from_start: number;
+}
+
+interface WaterAlert {
+  alert_level: string;
+  location: string;
+}
+
+interface SearchLocationBarProps {
+  recentTrip: Trip | null;
+  setRecentTrip: (value: Trip) => void;
+}
+
+const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
   recentTrip,
   setRecentTrip,
-}: {
-  recentTrip: any;
-  setRecentTrip: (value: any) => void;
 }) => {
-  const [activeTab, setActiveTab] = useState("recent");
+  const [activeTab, setActiveTab] = useState<"recent" | "history">("recent");
   const [loading, setLoading] = useState(false);
-  const [routes, setRoutes] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<Trip[]>([]);
   const [showPopup, setShowPopup] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState<
@@ -142,7 +179,8 @@ const SearchLocationBar = ({
                 onClick={() => toggleSection("routes-recent")}
               >
                 {recentTrip?.trip?.available_routes?.length ||
-                recentTrip?.available_routes?.length > 0 ? (
+                (recentTrip?.available_routes?.length &&
+                  recentTrip?.available_routes?.length > 0) ? (
                   (
                     recentTrip?.trip?.available_routes ||
                     recentTrip?.available_routes ||
@@ -152,7 +190,9 @@ const SearchLocationBar = ({
                       <h1 className="font-medium">Route {idx + 1}</h1>
                       <p>
                         Duration:{" "}
-                        {formatDuration(routeData?.duration.toFixed(2))}
+                        {formatDuration(
+                          parseInt(routeData?.duration?.toFixed(2))
+                        )}
                       </p>
                       <p>Distance: {routeData?.distance.toFixed(2)} km</p>
                     </div>
@@ -167,7 +207,8 @@ const SearchLocationBar = ({
                 isOpen={expandedSections["fuel-recent"]}
                 onClick={() => toggleSection("fuel-recent")}
               >
-                {recentTrip?.fuel_stops?.length > 0 ? (
+                {recentTrip?.fuel_stops?.length &&
+                recentTrip?.fuel_stops?.length > 0 ? (
                   recentTrip.fuel_stops.map((fuelData, idx) => (
                     <div key={idx} className="p-2 ">
                       <p className="font-medium">Fuel Stop {idx + 1}</p>
@@ -194,7 +235,8 @@ const SearchLocationBar = ({
                 isOpen={expandedSections["water-recent"]}
                 onClick={() => toggleSection("water-recent")}
               >
-                {recentTrip?.water_alerts?.length > 0 ? (
+                {recentTrip?.water_alerts?.length &&
+                recentTrip?.water_alerts?.length > 0 ? (
                   recentTrip.water_alerts.map((waterAlert, idx) => {
                     return (
                       <div key={idx} className="p-2 ">
@@ -248,13 +290,16 @@ const SearchLocationBar = ({
                   isOpen={expandedSections[`routes-${index}`]}
                   onClick={() => toggleSection(`routes-${index}`)}
                 >
-                  {route.available_routes?.length > 0 ? (
+                  {route.available_routes?.length &&
+                  route.available_routes?.length > 0 ? (
                     route.available_routes.map((routeData, idx) => (
                       <div key={idx} className="p-2 ">
                         <h1 className="font-medium">Route {idx + 1}</h1>
                         <p>
                           Duration:{" "}
-                          {formatDuration(routeData.duration.toFixed(2))}
+                          {formatDuration(
+                            parseInt(routeData.duration.toFixed(2))
+                          )}
                         </p>
                         <p>Distance: {routeData.distance.toFixed(2)} km</p>
                       </div>
@@ -269,7 +314,8 @@ const SearchLocationBar = ({
                   isOpen={expandedSections[`fuel-${index}`]}
                   onClick={() => toggleSection(`fuel-${index}`)}
                 >
-                  {route?.fuel_stops?.length > 0 ? (
+                  {route?.fuel_stops?.length &&
+                  route?.fuel_stops?.length > 0 ? (
                     route.fuel_stops.map((fuelData, idx) => (
                       <div key={idx} className="p-2 ">
                         <p className="font-medium">Fuel Stop {idx + 1}</p>
@@ -296,7 +342,8 @@ const SearchLocationBar = ({
                   isOpen={expandedSections[`water-${index}`]}
                   onClick={() => toggleSection(`water-${index}`)}
                 >
-                  {route?.water_alerts?.length > 0 ? (
+                  {route?.water_alerts?.length &&
+                  route?.water_alerts?.length > 0 ? (
                     route.water_alerts.map((waterAlert, idx) => {
                       return (
                         <div key={idx} className="p-2 ">
@@ -330,7 +377,17 @@ const SearchLocationBar = ({
 };
 
 // Reusable Accordion Section
-const AccordionSection = ({ title, isOpen, onClick, children }) => (
+const AccordionSection = ({
+  title,
+  isOpen,
+  onClick,
+  children,
+}: {
+  title: string;
+  onClick: (value: any) => void;
+  isOpen: boolean;
+  children: React.ReactNode;
+}) => (
   <div className="mt-3">
     <button
       className="flex  items-center justify-between w-full px-3 py-2 text-[#008080] font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 mb-2"
