@@ -2,13 +2,14 @@ import { useState } from "react";
 import { FaUser, FaCog } from "react-icons/fa";
 import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
 import Map from "./Map";
-import SearchLocationBar, { Trip } from "./SearchLocationBar";
 import { ImMap2 } from "react-icons/im";
+import { Trip } from "../types";
+import SearchLocationBar from "./SearchLocationBar";
 
 const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [recentTrip, setRecentTrip] = useState<Trip | null>(null);
-
+  const [loading, setLoading] = useState<boolean>(false);
   return (
     <div className="flex">
       <div
@@ -51,11 +52,12 @@ const Sidebar = () => {
           <SearchLocationBar
             recentTrip={recentTrip}
             setRecentTrip={setRecentTrip}
+            loading={loading}
           />
         </div>
 
         <div className="flex-1 w-full">
-          <Map setRecentTrip={setRecentTrip} />
+          <Map setRecentTrip={setRecentTrip} setLoading={setLoading} />
         </div>
       </div>
     </div>

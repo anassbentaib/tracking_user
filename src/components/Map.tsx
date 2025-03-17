@@ -11,9 +11,10 @@ import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import L from "leaflet";
 import { toast } from "sonner";
+import { serverUrl } from "../config/urlConfig";
+import { Trip } from "../types";
+import { useRoutes } from "../contexts/RouteContext";
 const { BaseLayer } = LayersControl;
-
-const API_URL = "https://tracking-user-backend.vercel.app/api/trips/new/";
 
 const redMarker = new L.Icon({
   iconUrl:
@@ -31,7 +32,11 @@ const userMarker = new L.Icon({
   popupAnchor: [1, -34],
 });
 
-const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
+interface MapProps {
+  setRecentTrip: (value: Trip) => void;
+  setLoading: (value: boolean) => void;
+}
+const Map = ({ setRecentTrip, setLoading }: MapProps) => {
   const [contextMenu, setContextMenu] = useState<{
     lat: number;
     lng: number;
@@ -45,8 +50,7 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
   >(null);
   const [from, setFrom] = useState<[number, number] | null>(null);
   const [to, setTo] = useState<[number, number] | null>(null);
-  const [routes, setRoutes] = useState<any[]>([]);
-  const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
+  const { routes, setRoutes, selectedRoute, setSelectedRoute } = useRoutes();
 
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
@@ -54,19 +58,27 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setUserLocation([51.505, -0.09]); // Default location
+      setMapLoaded(true);
+      toast.warning("Using default location due to timeout.");
+    }, 5000);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        clearTimeout(timeoutId);
         const { latitude, longitude } = position.coords;
         setUserLocation([latitude, longitude]);
         setMapLoaded(true);
       },
       (error) => {
+        clearTimeout(timeoutId);
         console.error("Error getting user location:", error);
         toast.error("Location access denied. Map will load default position.");
         setUserLocation([51.505, -0.09]);
         setMapLoaded(true);
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
 
@@ -105,8 +117,9 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
   }, [from, to]);
 
   const fetchRoutes = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${serverUrl}/trips/new/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -118,7 +131,10 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
       });
 
       const data = await response.json();
-      console.log("🚀 ~ fetchRoutes ~ data:", data);
+      if (!response.ok) {
+        alert(data?.error);
+        return;
+      }
       setRecentTrip(data);
       if (data.routes?.length > 0) {
         setRoutes(data.routes);
@@ -131,6 +147,8 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
       }
     } catch (error) {
       console.error("Error fetching routes:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,7 +201,7 @@ const Map = ({ setRecentTrip }: { setRecentTrip: (value: any) => void }) => {
             <Polyline
               key={idx}
               positions={route.route}
-              color={idx === selectedRoute ? "#2ECC71" : "#BDC3C7"}
+              color={idx === selectedRoute ? "red" : "#BDC3C7"}
               weight={idx === selectedRoute ? 6 : 4}
               opacity={idx === selectedRoute ? 1 : 0.6}
               eventHandlers={{

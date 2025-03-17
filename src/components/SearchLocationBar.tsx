@@ -3,52 +3,19 @@ import { FaSearch, FaChevronDown } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { formatDuration } from "../utils/formatDate";
 import Modal from "./Modal";
-
-const API_URL = "https://tracking-user-backend.vercel.app/api/trips/";
-export interface Trip {
-  id: string;
-  total_miles: number;
-  current_address: string;
-  pickup_address: string;
-  dropoff_address: string;
-  cycle_hours: number;
-  available_routes?: Route[];
-  trip: {
-    id: string;
-    total_miles: number;
-    current_address: string;
-    pickup_address: string;
-    dropoff_address: string;
-    cycle_hours: number;
-    available_routes?: Route[];
-  };
-  fuel_stops?: FuelStop[];
-  water_alerts?: WaterAlert[];
-}
-
-interface Route {
-  duration: number;
-  distance: number;
-}
-
-interface FuelStop {
-  location: string;
-  distance_from_start: number;
-}
-
-interface WaterAlert {
-  alert_level: string;
-  location: string;
-}
+import { serverUrl } from "../config/urlConfig";
+import { Trip } from "../types";
 
 interface SearchLocationBarProps {
   recentTrip: Trip | null;
   setRecentTrip: (value: Trip) => void;
+  loading: boolean;
 }
 
 const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
   recentTrip,
   setRecentTrip,
+  loading: fetchLoading,
 }) => {
   const [activeTab, setActiveTab] = useState<"recent" | "history">("recent");
   const [loading, setLoading] = useState(false);
@@ -69,7 +36,7 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
   const fetchTrips = async () => {
     setLoading(true);
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(`${serverUrl}/trips/`);
       const data = await response.json();
       setRecentTrip(data?.recent_trip);
       if (data?.all_trips?.length > 0) {
@@ -89,12 +56,12 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
   return (
     <div className="w-[260px] sm:w-[400px] text-sm font-light bg-white border-r border-gray-300 shadow-lg h-full">
       <div className="flex-1 text-[13px] text-center flex items-end justify-end w-full ">
-        {/* <button
+        <button
           className="bg-[#008080]  px-4 py-2 m-2 rounded-md text-white cursor-pointer"
           onClick={() => setShowPopup(true)}
         >
           Add Trip
-        </button> */}
+        </button>
       </div>
       <div className="flex items-center  text-[#008080] font-semibold">
         <button className="flex-1 py-4 px-1 text-[13px] text-center border-b-2">
@@ -105,7 +72,6 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
         </button>
       </div>
 
-      {/* Search Bar */}
       <div className="p-4 ">
         <div className="relative">
           <FaSearch className="absolute left-3 top-4 text-gray-400" />
@@ -117,7 +83,6 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center  text-[#008080] font-semibold">
         <button
           className={`flex-1 text-[13px] p-4 cursor-pointer text-center ${
@@ -142,8 +107,8 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
       </div>
       {activeTab === "recent" && (
         <div className="px-1 overflow-y-auto max-h-[400px]">
-          {loading ? (
-            <p className="text-center mt-10">Loading...</p>
+          {loading || fetchLoading ? (
+            <p className="text-center mt-10">Loading Route...</p>
           ) : recentTrip ? (
             <div className="p-4 border-b border-gray-200">
               <h1 className="text-lg font-semibold mb-1">Trip</h1>
@@ -284,7 +249,6 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
                   {route?.dropoff_address}
                 </p>
 
-                {/* Accordion Sections */}
                 <AccordionSection
                   title="Available Routes"
                   isOpen={expandedSections[`routes-${index}`]}
@@ -371,12 +335,17 @@ const SearchLocationBar: React.FC<SearchLocationBarProps> = ({
           )}
         </div>
       )}
-      {showPopup && <Modal showPopup={showPopup} setShowPopup={setShowPopup} />}
+      {showPopup && (
+        <Modal
+          setRecentTrip={setRecentTrip}
+          showPopup={showPopup}
+          setShowPopup={setShowPopup}
+        />
+      )}
     </div>
   );
 };
 
-// Reusable Accordion Section
 const AccordionSection = ({
   title,
   isOpen,
